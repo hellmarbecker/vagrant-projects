@@ -1,20 +1,17 @@
 # -*- mode: ruby -*-
 
-$script_slave = <<SCRIPT
-echo Starting provisioning script for slave
-echo Finished provisioning script for slave
-SCRIPT
-
-$script_master = <<SCRIPT
-echo Starting provisioning script for master
-test -f /root/.ssh/id_rsa || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
-echo Finished provisioning script for master
-SCRIPT
-
 Vagrant.configure(2) do |config|
+
+  if File.exists?(File.join(Dir.home, ".ssh", "id_rsa.pub"))
+    # Read local machine's public SSH Key. This will be copied to all machines.
+    ssh_key_pub = File.read(File.join(Dir.pwd, ".ssh", "id_rsa.pub"))
+    # Copy it to VM as the /root/.ssh/id_rsa key
+    config.vm.provision :shell, :inline => "echo 'Copying public SSH Key to VM for provisioning...' && mkdir -p /root/.ssh && echo '#{ssh_key_pub}' > /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa"
+  end
   
   config.vm.define "slave1" do |slave1|
-    slave1.vm.provision "shell", inline: $script_slave
+    ssh_key_pub = File.read(File.join(Dir.pwd, ".ssh", "id_rsa.pub"))
+    slave1.vm.provision :shell, :inline => "echo 'Copying public root SSH Key to slave VM for provisioning...' && mkdir -p /root/.ssh && echo '#{ssh_key_pub}' > /root/.ssh/id_rsa.pub && chmod 600 /root/.ssh/id_rsa.pub && cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys && chmod 0400 /root/.ssh/authorized_keys"
     slave1.vm.box = "chef/centos-6.5"
     slave1.vm.hostname = "slave1"
     slave1.vm.network "private_network", ip: "192.168.17.21"
@@ -26,7 +23,15 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define "master1" do |master1|
-    master1.vm.provision "shell", inline: $script_master
+    # This guy is the only one that will have the private key. Read the private key from previously filled location.
+    ssh_key = File.read(File.join(Dir.pwd, ".ssh", "id_rsa"))
+    ssh_key_pub = File.read(File.join(Dir.pwd, ".ssh", "id_rsa.pub"))
+    # Store the private key in root's .ssh directory.
+    master1.vm.provision :shell, :inline => "echo 'Copying private root SSH Key to master VM for provisioning...' && mkdir -p /root/.ssh && echo '#{ssh_key}' > /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa"
+    master1.vm.provision :shell, :inline => "echo 'Copying public root SSH Key to master VM for provisioning...' && mkdir -p /root/.ssh && echo '#{ssh_key_pub}' > /root/.ssh/id_rsa.pub && chmod 600 /root/.ssh/id_rsa.pub && cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys && chmod 0400 /root/.ssh/authorized_keys"
+    # Note: After this, use something like
+    #   ssh -oStrictHostKeyChecking=no 192.168.17.21 'echo Logging in for host key'
+    # to automatically accept the host key for each slave.
     master1.vm.box = "chef/centos-6.5"
     master1.vm.hostname = "master1"
     master1.vm.network "private_network", ip: "192.168.17.11"
