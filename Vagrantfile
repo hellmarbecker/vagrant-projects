@@ -2,13 +2,11 @@
 
 Vagrant.configure(2) do |config|
 
-  if File.exists?(File.join(Dir.home, ".ssh", "id_rsa.pub"))
-    # Read local machine's public SSH Key. This will be copied to all machines.
-    ssh_key_pub = File.read(File.join(Dir.pwd, ".ssh", "id_rsa.pub"))
-    # Copy it to VM as the /root/.ssh/id_rsa key
-    config.vm.provision :shell, :inline => "echo 'Copying public SSH Key to VM for provisioning...' && mkdir -p /root/.ssh && echo '#{ssh_key_pub}' > /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa"
+  # Configure VM Ram usage
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 1536
   end
-  
+
   config.vm.define "slave1" do |slave1|
     ssh_key_pub = File.read(File.join(Dir.pwd, ".ssh", "id_rsa.pub"))
     slave1.vm.provision :shell, :inline => "echo 'Copying public root SSH Key to slave VM for provisioning...' && mkdir -p /root/.ssh && echo '#{ssh_key_pub}' > /root/.ssh/id_rsa.pub && chmod 600 /root/.ssh/id_rsa.pub && cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys && chmod 0400 /root/.ssh/authorized_keys"
