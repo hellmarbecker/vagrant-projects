@@ -9,7 +9,7 @@ for i in 0 1 2
 do
   mkdir -p /grid$i
 done
-<<EOF
+EOF
 $script_setup = <<EOF
 echo "Setting up hosts file"
 echo "192.168.17.11 master-1" >> /etc/hosts
