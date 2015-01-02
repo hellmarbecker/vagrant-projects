@@ -33,13 +33,6 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define "master-1", primary: true do |master|
-    # This guy is the only one that will have the private key. Read the private key from previously filled location.
-    # Store the private key in root's .ssh directory.
-    master.vm.provision :shell, :inline => "echo 'Copying private root SSH Key to master VM for provisioning...' && mkdir -p /root/.ssh && echo '#{ssh_key}' > /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa"
-    # Note: After this, use something like
-    #   ssh -oStrictHostKeyChecking=no 192.168.17.21 'echo Logging in for host key'
-    # to automatically accept the host key for each slave.
-    # master.vm.box = "chef/centos-6.5"
     master.vm.hostname = "master-1"
     master.vm.network "private_network", ip: "192.168.17.11"
     master.vm.network :forwarded_port,
