@@ -2,9 +2,8 @@
 #-------------------------------------------------------------------------------
 # Provisioning script for cluster nodes
 # Parameters:
-# $1 - hostname
-# $2 - public key for root
-# $3 - private key for root (only on master)
+# $1 - public key for root
+# $2 - private key for root (only on master)
 #-------------------------------------------------------------------------------
 
 # If the provisioner ran already, do nothing.
@@ -19,9 +18,9 @@ touch $tagfile
 
 mkdir -p /root/.ssh
 echo 'Copying public root SSH Key to VM for provisioning...'
-echo $1 > /root/.ssh/id_rsa.pub
+echo "$1" > /root/.ssh/id_rsa.pub
 chmod 600 /root/.ssh/id_rsa.pub
-cat /root/.ssh/id_rsa.pub > /root/.ssh/authorized_keys
+cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 chmod 0400 /root/.ssh/authorized_keys
 # Note: After this, use something like
 #   ssh -oStrictHostKeyChecking=no 192.168.17.21 'echo Logging in for host key'
@@ -29,8 +28,11 @@ chmod 0400 /root/.ssh/authorized_keys
 
 echo "hostname: `hostname`"
 
-# Enter all the cluster hostnames to the hosts file. Make sure own hostname resolves to the external IP
-# (not localhost).
+echo "Installing perl"
+yum -y install perl
+
+# Enter all the cluster hostnames to the hosts file. Make sure own hostname
+# resolves to the external IP (not localhost).
 echo "Setting up hosts file"
 perl -pi -e 's/(127\.0\.0\.1\s+)\S+/$1/' /etc/hosts
 echo "192.168.17.11 master-1" >> /etc/hosts
@@ -44,12 +46,11 @@ done
 if [[ `hostname` =~ 'master' ]]
 then
   echo 'Copying private root SSH Key to VM for provisioning...'
-  echo $2 > /root/.ssh/id_rsa
+  echo "$2" > /root/.ssh/id_rsa
   chmod 600 /root/.ssh/id_rsa
   echo "Setting up host key cache"
   for node in "master-1" "slave-1" "slave-2"
   do
-    echo "192.168.17.2$i slave-$i" >> /etc/hosts
     ssh -oStrictHostKeyChecking=no $node "echo Logging in to $node for host key"
   done
 fi
@@ -59,9 +60,6 @@ for i in 0 1 2
 do
   mkdir -p /grid$i
 done
-
-echo "Installing perl"
-yum -y install perl
 
 echo "Setting up Ambari repository"
 cd /etc/yum.repos.d
