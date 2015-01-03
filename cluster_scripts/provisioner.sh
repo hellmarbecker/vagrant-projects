@@ -81,10 +81,6 @@ then
 fi
 
 echo "Waiting for Ambari server to come up"
-while true
-do
-  curl "http://master-1:8080" >&/dev/null && break
-done
-
-echo "Starting Ambari agent"
+nohup sudo ~vagrant/start_ambari.sh &
+echo "Provisioner: done"
 
