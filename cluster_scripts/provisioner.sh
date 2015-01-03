@@ -81,6 +81,7 @@ then
 fi
 
 echo "Waiting for Ambari server to come up"
+chmod a+x ~vagrant/start_ambari.sh
 nohup sudo ~vagrant/start_ambari.sh &
 echo "Provisioner: done"
 
