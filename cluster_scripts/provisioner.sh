@@ -67,8 +67,8 @@ done
 echo "Setting up Ambari repository"
 cd /etc/yum.repos.d
 wget -nv -nc http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.7.0/ambari.repo
-echo "Installing Ambari agent"
-yum -y install ambari-agent
+# echo "Installing Ambari agent"
+# yum -y install ambari-agent
 
 if [[ `hostname` =~ 'master' ]]
 then
@@ -78,10 +78,31 @@ then
   ambari-server setup -s
   echo "Starting Ambari server"
   ambari-server start
+
+  echo "Waiting for Ambari server to answer on port 8080"
+  while true
+  do
+    curl "http://master-1:8080" >&/dev/null && break
+  done
+
+  echo "Distributing Ambari agents"
+  jkey=`echo "$2" | perl -e 'my $a = join "", <>; $a =~ s/\n/\\\\n/g; print $a'`
+  echo "jkey: [$jkey]"
+  curl -i -uadmin:admin \
+    -H 'X-Requested-By: ambari' \
+    -H 'Content-Type: application/json' \
+    -X POST \
+    -d"{
+      \"verbose\":true,
+      \"sshKey\":\"$jkey\",
+      \"hosts\":[
+        \"master-1\",
+        \"slave-1\",
+        \"slave-2\"
+      ],
+      \"user\":\"vagrant\"
+    }" 'http://master-1:8080/api/v1/bootstrap'
 fi
 
-echo "Waiting for Ambari server to come up"
-chmod a+x ~vagrant/start_ambari.sh
-nohup sudo ~vagrant/start_ambari.sh &
 echo "Provisioner: done"
 
