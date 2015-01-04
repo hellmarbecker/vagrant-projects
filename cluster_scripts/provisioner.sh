@@ -70,6 +70,10 @@ wget -nv -nc http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.7
 # echo "Installing Ambari agent"
 # yum -y install ambari-agent
 
+# Workaround for SSL bug in CentOS 6.5, see http://hortonworks.com/community/forums/topic/ambari-agent-registration-failure-on-rhel-6-5-due-to-openssl-2/
+echo "Upgrading openssl"
+yum -y upgrade openssl
+
 if [[ `hostname` =~ 'master' ]]
 then
   echo "Installing Ambari server"
