@@ -16,7 +16,7 @@ Vagrant.configure(2) do |config|
   ssh_key = File.read(File.join(Dir.pwd, ".ssh", "id_rsa"))
 
   config.vm.provision :shell do |s|
-    s.path = File.join(Dir.pwd, "provisioner.sh")
+    s.path = File.join(Dir.pwd, "cluster_scripts", "provisioner.sh")
     s.args = [ ssh_key_pub, ssh_key ]
   end
 
