@@ -90,8 +90,10 @@ then
   done
 
   echo "Distributing Ambari agents"
-  jkey=`echo "$2" | perl -e 'my $a = join "", <>; $a =~ s/\n/\\\\n/g; print $a'`
-  echo "jkey: [$jkey]"
+  # Need to convert the newlines in private key to \n escape sequence for JSON transmission
+  # jkey=`echo "$2" | perl -e 'my $a = join "", <>; $a =~ s/\n/\\\\n/g; print $a'`
+  jkey="${2//
+/\n}"
   curl -i -uadmin:admin \
     -H 'X-Requested-By: ambari' \
     -H 'Content-Type: application/json' \
@@ -104,8 +106,11 @@ then
         \"slave-1\",
         \"slave-2\"
       ],
-      \"user\":\"vagrant\"
+      \"user\":\"root\"
     }" 'http://master-1:8080/api/v1/bootstrap'
+  # use something like
+  #   curl -i -uadmin:admin http://localhost:8080/api/v1/bootstrap/1 | perl -pe 's/\\n/\n/g'
+  # to check status
 fi
 
 echo "Provisioner: done"
