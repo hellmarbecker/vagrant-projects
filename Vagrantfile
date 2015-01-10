@@ -12,6 +12,9 @@ Vagrant.configure(2) do |config|
     v.memory = 1536
   end
 
+  # Share the software tarball to a directory - this will only be used on master
+  config.vm.synced_folder "D:\\Downloads\\Hortonworks", "/root/hadoop-sw"
+
   ssh_key_pub = File.read(File.join(Dir.pwd, ".ssh", "id_rsa.pub"))
   ssh_key = File.read(File.join(Dir.pwd, ".ssh", "id_rsa"))
 

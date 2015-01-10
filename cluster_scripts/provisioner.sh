@@ -76,6 +76,16 @@ yum -y upgrade openssl
 
 if [[ `hostname` =~ 'master' ]]
 then
+
+  echo "Installing Apache web server"
+  yum -y install httpd
+  echo "Starting web server on port 80"
+  service httpd start
+  echo "Setting up repositories"
+  mkdir -p /var/www/html/hdp
+  tar -C /var/www/html/hdp -xzf /root/hadoop-sw/HDP-2.2.0.0-centos6-rpm.tar.gz
+  tar -C /var/www/html/hdp -xzf /root/hadoop-sw/HDP-UTILS-1.1.0.20-centos6.tar.gz
+  tar -C /var/www/html -xzf /root/hadoop-sw/ambari-1.7.0-centos6.tar.gz
   echo "Installing Ambari server"
   yum -y install ambari-server
   echo "Setting up Ambari server"
