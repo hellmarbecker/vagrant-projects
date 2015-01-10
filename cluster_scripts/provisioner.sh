@@ -64,9 +64,6 @@ do
   mkdir -p /grid$i
 done
 
-echo "Setting up Ambari and HDP repository files"
-# expecting these in the schared project dir on the host
-cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/yum.repos.d/
 # cd /etc/yum.repos.d
 # wget -nv -nc http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.7.0/ambari.repo
 # echo "Installing Ambari agent"
@@ -78,16 +75,25 @@ yum -y upgrade openssl
 
 if [[ `hostname` =~ 'master' ]]
 then
-
   echo "Installing Apache web server"
   yum -y install httpd
-  echo "Starting web server on port 80"
-  service httpd start
-  echo "Setting up repositories"
+
+  echo "Setting up repository mirrors"
   mkdir -p /var/www/html/hdp
   tar -C /var/www/html/hdp -xzf /root/hadoop-sw/HDP-2.2.0.0-centos6-rpm.tar.gz
   tar -C /var/www/html/hdp -xzf /root/hadoop-sw/HDP-UTILS-1.1.0.20-centos6.tar.gz
   tar -C /var/www/html -xzf /root/hadoop-sw/ambari-1.7.0-centos6.tar.gz
+
+  echo "Starting web server on port 80"
+  service httpd start
+fi
+
+echo "Setting up Ambari and HDP repository files"
+# expecting these in the schared project dir on the host
+cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/yum.repos.d/
+
+if [[ `hostname` =~ 'master' ]]
+then
   echo "Installing Ambari server"
   yum -y install ambari-server
   echo "Setting up Ambari server"
