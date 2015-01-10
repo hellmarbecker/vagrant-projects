@@ -64,9 +64,11 @@ do
   mkdir -p /grid$i
 done
 
-echo "Setting up Ambari repository"
-cd /etc/yum.repos.d
-wget -nv -nc http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.7.0/ambari.repo
+echo "Setting up Ambari and HDP repository files"
+# expecting these in the schared project dir on the host
+cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/yum.repos.d/
+# cd /etc/yum.repos.d
+# wget -nv -nc http://public-repo-1.hortonworks.com/ambari/centos6/1.x/updates/1.7.0/ambari.repo
 # echo "Installing Ambari agent"
 # yum -y install ambari-agent
 
