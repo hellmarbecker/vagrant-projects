@@ -20,7 +20,7 @@ Vagrant.configure(2) do |config|
     s.args = [ ssh_key_pub, ssh_key ]
   end
 
-  (1..2).each do |i|
+  (1..3).each do |i|
     config.vm.define "slave-#{i}" do |slave|
       slave.vm.hostname = "slave-#{i}"
       slave.vm.network "private_network", ip: "192.168.17.2#{i}"

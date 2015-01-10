@@ -32,7 +32,7 @@ yum -y install perl
 echo "Setting up hosts file"
 perl -pi -e 's/(127\.0\.0\.1\s+)\S+/$1/' /etc/hosts
 echo "192.168.17.11 master-1" >> /etc/hosts
-for i in 1 2
+for i in 1 2 3
 do
   echo "192.168.17.2$i slave-$i" >> /etc/hosts
 done
@@ -46,7 +46,7 @@ then
   echo "$2" > /root/.ssh/id_rsa
   chmod 600 /root/.ssh/id_rsa
   echo "Setting up host key cache"
-  for node in "master-1" "slave-1" "slave-2"
+  for node in "master-1" "slave-1" "slave-2" "slave-3"
   do
     ssh -oStrictHostKeyChecking=no $node "echo Logging in to $node for host key"
   done
@@ -104,7 +104,8 @@ then
       \"hosts\":[
         \"master-1\",
         \"slave-1\",
-        \"slave-2\"
+        \"slave-2\",
+        \"slave-3\"
       ],
       \"user\":\"root\"
     }" 'http://master-1:8080/api/v1/bootstrap'
