@@ -73,10 +73,17 @@ done
 echo "Upgrading openssl"
 yum -y upgrade openssl
 
+echo "Downloading and installing Java"
+# if we want oracle java:
+# see http://tecadmin.net/steps-to-install-java-on-centos-5-6-or-rhel-5-6/
+# but for now try:
+yum -y install java-1.7.0-openjdk java-1.7.0-openjdk-devel
+
 if [[ `hostname` =~ 'master' ]]
 then
   echo "Installing Apache web server"
   yum -y install httpd
+  chkconfig httpd on
 
   echo "Setting up repository mirrors"
   mkdir -p /var/www/html/hdp
@@ -97,15 +104,26 @@ then
   echo "Installing Ambari server"
   yum -y install ambari-server
   echo "Setting up Ambari server"
-  ambari-server setup -s
+  # use the previously downloaded JDK so we don't need to download again
+  ambari-server setup -s -j /usr/lib/jvm/jre-1.7.0-openjdk.x86_64
+
+  # Increase install timeout because otherwise the hadoop_2_2_* will bust. See AMBARI-8220
+  echo "Setting install timeout"
+  sed -i "s/agent.task.timeout=.*/agent.task.timeout=3600/" /etc/ambari-server/conf/ambari.properties
+
   echo "Starting Ambari server"
   ambari-server start
+
+  echo "Installing Ambari shell"
+  curl -Ls https://raw.githubusercontent.com/sequenceiq/ambari-shell/master/latest-snap.sh | bash
+  # this leaves the ambari shell to be invoked as java -jar /tmp/ambari-shell.jar
 
   echo "Waiting for Ambari server to answer on port 8080"
   while true
   do
     curl "http://master-1:8080" >&/dev/null && break
   done
+
 
   echo "Distributing Ambari agents"
   # Need to convert the newlines in private key to \n escape sequence for JSON transmission
