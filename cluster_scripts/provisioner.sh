@@ -4,6 +4,7 @@
 # Parameters:
 # $1 - public key for root
 # $2 - private key for root (only on master)
+# $3 - number of slave nodes
 #-------------------------------------------------------------------------------
 
 # If the provisioner ran already, do nothing.
@@ -31,10 +32,10 @@ yum -y install perl
 # resolves to the external IP (not localhost).
 echo "Setting up hosts file"
 perl -pi -e 's/(127\.0\.0\.1\s+)\S+/$1/' /etc/hosts
-echo "192.168.17.11 master-1" >> /etc/hosts
-for i in 1 2 3
+echo "192.168.17.11 master-1 master-1.localdomain" >> /etc/hosts
+for i in `seq 1 .. $3`
 do
-  echo "192.168.17.2$i slave-$i" >> /etc/hosts
+  echo "192.168.17.2$i slave-$i slave-$i.localdomain" >> /etc/hosts
 done
 
 # If this is the master node, copy the root private key to ~/.ssh.
@@ -46,9 +47,10 @@ then
   echo "$2" > /root/.ssh/id_rsa
   chmod 600 /root/.ssh/id_rsa
   echo "Setting up host key cache"
-  for node in "master-1" "slave-1" "slave-2" "slave-3"
+  ssh -oStrictHostKeyChecking=no master-1 "echo Logging in to master-1 for host key"
+  for i in `seq 1 .. $3`
   do
-    ssh -oStrictHostKeyChecking=no $node "echo Logging in to $node for host key"
+    ssh -oStrictHostKeyChecking=no slave-$i "echo Logging in to slave-$i for host key"
   done
 fi
 
@@ -58,10 +60,11 @@ echo '* soft nofile 10240' >> /etc/security/limits.conf
 ulimit -Hn 10240
 ulimit -Sn 10240
 
-echo "Creating /gridXX directories"
+echo "Creating gridXX directories"
 for i in 0 1 2
 do
-  mkdir -p /grid$i
+  mkdir -p /hadoop/grid$i
+  chmod 777 /hadoop/grid$i
 done
 
 # cd /etc/yum.repos.d
@@ -99,8 +102,57 @@ echo "Setting up Ambari and HDP repository files"
 # expecting these in the schared project dir on the host
 cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/yum.repos.d/
 
+# BUILD_AMBARI=1
+
 if [[ `hostname` =~ 'master' ]]
 then
+
+  if [ -n "$BUILD_AMBARI" ]
+  then
+    #-------------------------------------------------------------------------------
+    # Build Ambari from newest Github.
+    # See: https://cwiki.apache.org/confluence/display/AMBARI/Ambari+Development
+    #-------------------------------------------------------------------------------
+
+    # Get Ambari latest (trunk)
+    git clone https://github.com/apache/ambari.git
+
+    # Install Maven
+    wget -nv http://apache.mirror1.spango.com/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz
+    mkdir -p /usr/local/apache-maven
+    tar -C /usr/local/apache-maven -xzf ~/apache-maven-3.0.5-bin.tar.gz
+    read -r -d '' SETENV <<-'EOF'
+	export M2_HOME=/usr/local/apache-maven/apache-maven-3.0.5
+	export M2=$M2_HOME/bin
+	export JAVA_HOME=/usr/lib/jvm/jre-1.7.0-openjdk.x86_64
+	export PATH=$JAVA_HOME:$M2:$PATH
+	EOF
+    echo "$SETENV" >> ~/.bashrc
+    eval "$SETENV"
+
+    # Install Python setup tools
+    wget -nv --no-check-certificate http://pypi.python.org/packages/2.6/s/setuptools/setuptools-0.6c11-py2.6.egg#md5=bfa92100bd772d5a213eedd356d64086
+    sh setuptools-0.6c11-py2.6.egg
+
+    # rpmbuild, g++
+    yum -y install rpm-build
+    yum -y install gcc-c++
+
+    # node.js
+    wget -nv http://nodejs.org/dist/v0.10.35/node-v0.10.35-linux-x64.tar.gz
+    mkdir -p /usr/local/node
+    tar -C /usr/local/node -xzf ~/node-v0.10.35-linux-x64.tar.gz
+    read -r -d '' SETENV <<-'EOF'
+	export PATH=/usr/local/node/node-v0.10.35-linux-x64/bin:$PATH
+	EOF
+    echo "$SETENV" >> ~/.bashrc
+    eval "$SETENV"
+
+    # brunch
+    npm install -g brunch@1.7.17
+  fi  
+
+#-------------------------------------------------------------------------------
   echo "Installing Ambari server"
   yum -y install ambari-server
   echo "Setting up Ambari server"

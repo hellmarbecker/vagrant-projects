@@ -3,13 +3,18 @@
 # The centos65 box comes with a dynamic 40G disk that is allocated to
 # one volume group.
 
+# Set the number of slave nodes.
+$NSLAVES=2
+
 Vagrant.configure(2) do |config|
 
   config.vm.box = "chef/centos-6.5"
 
   # Configure VM Ram usage
   config.vm.provider "virtualbox" do |v|
-    v.memory = 1536
+    v.memory = 1280
+    # Fix DNS, see http://askubuntu.com/questions/238040/how-do-i-fix-name-service-for-vagrant-client
+    v.customize [ "modifyvm", :id, "--natdnshostresolver1", "on" ]
   end
 
   # Share the software tarball to a directory - this will only be used on master
@@ -20,10 +25,10 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision :shell do |s|
     s.path = File.join(Dir.pwd, "cluster_scripts", "provisioner.sh")
-    s.args = [ ssh_key_pub, ssh_key ]
+    s.args = [ ssh_key_pub, ssh_key, $NSLAVES ]
   end
 
-  (1..3).each do |i|
+  (1..$NSLAVES).each do |i|
     config.vm.define "slave-#{i}" do |slave|
       slave.vm.hostname = "slave-#{i}"
       slave.vm.network "private_network", ip: "192.168.17.2#{i}"
