@@ -17,11 +17,19 @@ then
 fi
 touch $tagfile
 
+# Try to find out if we are running inside ING, if so set proxy
+if curl -s www.retail.intranet >/dev/null
+then
+  echo "Detected ING network. Setting proxy for ING"
+  export http_proxy=http://m05h306:Ping2oo5@proxynldcv.europe.intranet:8080/
+  export https_proxy=${http_proxy}
+fi
+
 # Distribute root's public ssh key to all nodes.
 mkdir -p /root/.ssh
 echo 'Copying public root SSH Key to VM for provisioning...'
 echo "$1" > /root/.ssh/id_rsa.pub
-chmod 600 /root/.ssh/id_rsa.pub
+chmod 0600 /root/.ssh/id_rsa.pub
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 chmod 0400 /root/.ssh/authorized_keys
 
@@ -107,54 +115,11 @@ cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/y
 if [[ `hostname` =~ 'master' ]]
 then
 
-  if [ -n "$BUILD_AMBARI" ]
-  then
-    #-------------------------------------------------------------------------------
-    # Build Ambari from newest Github.
-    # See: https://cwiki.apache.org/confluence/display/AMBARI/Ambari+Development
-    #-------------------------------------------------------------------------------
-
-    # Get Ambari latest (trunk)
-    git clone https://github.com/apache/ambari.git
-
-    # Install Maven
-    wget -nv http://apache.mirror1.spango.com/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz
-    mkdir -p /usr/local/apache-maven
-    tar -C /usr/local/apache-maven -xzf ~/apache-maven-3.0.5-bin.tar.gz
-    read -r -d '' SETENV <<-'EOF'
-	export M2_HOME=/usr/local/apache-maven/apache-maven-3.0.5
-	export M2=$M2_HOME/bin
-	export JAVA_HOME=/usr/lib/jvm/jre-1.7.0-openjdk.x86_64
-	export PATH=$JAVA_HOME:$M2:$PATH
-	EOF
-    echo "$SETENV" >> ~/.bashrc
-    eval "$SETENV"
-
-    # Install Python setup tools
-    wget -nv --no-check-certificate http://pypi.python.org/packages/2.6/s/setuptools/setuptools-0.6c11-py2.6.egg#md5=bfa92100bd772d5a213eedd356d64086
-    sh setuptools-0.6c11-py2.6.egg
-
-    # rpmbuild, g++
-    yum -y install rpm-build
-    yum -y install gcc-c++
-
-    # node.js
-    wget -nv http://nodejs.org/dist/v0.10.35/node-v0.10.35-linux-x64.tar.gz
-    mkdir -p /usr/local/node
-    tar -C /usr/local/node -xzf ~/node-v0.10.35-linux-x64.tar.gz
-    read -r -d '' SETENV <<-'EOF'
-	export PATH=/usr/local/node/node-v0.10.35-linux-x64/bin:$PATH
-	EOF
-    echo "$SETENV" >> ~/.bashrc
-    eval "$SETENV"
-
-    # brunch
-    npm install -g brunch@1.7.17
-  fi  
-
-#-------------------------------------------------------------------------------
   echo "Installing Ambari server"
-  yum -y install ambari-server
+  # for standard released version:
+  # yum -y install ambari-server
+  # bleeding edge version:
+  yum -y install /vagrant/ambari-rpm/ambari-server-*.noarch.rpm
   echo "Setting up Ambari server"
   # use the previously downloaded JDK so we don't need to download again
   ambari-server setup -s -j /usr/lib/jvm/jre-1.7.0-openjdk.x86_64
@@ -176,31 +141,40 @@ then
     curl "http://master-1:8080" >&/dev/null && break
   done
 
-
-  echo "Distributing Ambari agents"
-  # Need to convert the newlines in private key to \n escape sequence for JSON transmission
-  # jkey=`echo "$2" | perl -e 'my $a = join "", <>; $a =~ s/\n/\\\\n/g; print $a'`
-  jkey="${2//
+  # PUSH_AGENTS=1
+  if [ -n "$PUSH_AGENTS" ]
+  then
+    echo "Distributing Ambari agents"
+    # Need to convert the newlines in private key to \n escape sequence for JSON transmission
+    # jkey=`echo "$2" | perl -e 'my $a = join "", <>; $a =~ s/\n/\\\\n/g; print $a'`
+    jkey="${2//
 /\n}"
-  curl -i -uadmin:admin \
-    -H 'X-Requested-By: ambari' \
-    -H 'Content-Type: application/json' \
-    -X POST \
-    -d"{
-      \"verbose\":true,
-      \"sshKey\":\"$jkey\",
-      \"hosts\":[
-        \"master-1\",
-        \"slave-1\",
-        \"slave-2\",
-        \"slave-3\"
-      ],
-      \"user\":\"root\"
-    }" 'http://master-1:8080/api/v1/bootstrap'
-  # use something like
-  #   curl -i -uadmin:admin http://localhost:8080/api/v1/bootstrap/1 | perl -pe 's/\\n/\n/g'
-  # to check status
+    curl -i -uadmin:admin \
+      -H 'X-Requested-By: ambari' \
+      -H 'Content-Type: application/json' \
+      -X POST \
+      -d"{
+        \"verbose\":true,
+        \"sshKey\":\"$jkey\",
+        \"hosts\":[
+          \"master-1\",
+          \"slave-1\",
+          \"slave-2\",
+          \"slave-3\"
+        ],
+        \"user\":\"root\"
+      }" 'http://master-1:8080/api/v1/bootstrap'
+    # use something like
+    #   curl -i -uadmin:admin http://localhost:8080/api/v1/bootstrap/1 | perl -pe 's/\\n/\n/g'
+    # to check status
+  fi
 fi
+
+# agents to be installed on all nodes
+echo "Installing Ambari agent"
+yum -y install /vagrant/ambari-rpm/ambari-agent-*.rpm
+echo "Starting Ambari agent"
+ambari-agent start
 
 echo "Provisioner: done"
 

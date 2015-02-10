@@ -4,7 +4,7 @@
 # one volume group.
 
 # Set the number of slave nodes.
-$NSLAVES=2
+$NSLAVES=1
 
 Vagrant.configure(2) do |config|
 
