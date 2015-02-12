@@ -1,7 +1,7 @@
 #VERSION_NUMBER=2.2.0.0-2041
 [HDP-2.2.0.0]
 name=Hortonworks Data Platform Version - HDP-2.2.0.0
-baseurl=http://master-1/hdp/HDP/centos6/2.x/GA/2.2.0.0
+baseurl=file:///vagrant/hdp-repo/hdp/HDP/centos6/2.x/GA/2.2.0.0
 gpgcheck=0
 enabled=1
 priority=1
@@ -9,7 +9,7 @@ priority=1
 
 [HDP-UTILS-1.1.0.20]
 name=Hortonworks Data Platform Utils Version - HDP-UTILS-1.1.0.20
-baseurl=http://master-1/hdp/HDP-UTILS-1.1.0.20/repos/centos6
+baseurl=file:///vagrant/hdp-repo/hdp/HDP-UTILS-1.1.0.20/repos/centos6
 gpgcheck=0
 enabled=1
 priority=1

@@ -90,24 +90,25 @@ echo "Downloading and installing Java"
 # but for now try:
 yum -y install java-1.7.0-openjdk java-1.7.0-openjdk-devel
 
-if [[ `hostname` =~ 'master' ]]
-then
-  echo "Installing Apache web server"
-  yum -y install httpd
-  chkconfig httpd on
-
-  echo "Setting up repository mirrors"
-  mkdir -p /var/www/html/hdp
-  tar -C /var/www/html/hdp -xzf /root/hadoop-sw/HDP-2.2.0.0-centos6-rpm.tar.gz
-  tar -C /var/www/html/hdp -xzf /root/hadoop-sw/HDP-UTILS-1.1.0.20-centos6.tar.gz
-  tar -C /var/www/html -xzf /root/hadoop-sw/ambari-1.7.0-centos6.tar.gz
-
-  echo "Starting web server on port 80"
-  service httpd start
+echo "Setting up repository mirrors"
+export HDP_REPO_BASEPATH=/vagrant/hdp-repo
+export HDP_REPO_PATH=${HDP_REPO_PATH}/hdp
+mkdir -p ${HDP_REPO_PATH}
+if [ ! -d "${HDP_REPO_PATH}/HDP" ] ; then
+  echo "Untarring HDP"
+  tar -C ${HDP_REPO_PATH} -xzf /root/hadoop-sw/HDP-2.2.0.0-centos6-rpm.tar.gz/
+fi
+if [ ! -d "${HDP_REPO_PATH}/HDP-UTILS-1.1.0.20" ] ; then
+  echo "Untarring HDP-UTILS"
+  tar -C ${HDP_REPO_PATH} -xzf /root/hadoop-sw/HDP-UTILS-1.1.0.20-centos6.tar.gz
+fi
+if [ ! -d "${HDP_REPO_BASEPATH}/ambari" ] ; then
+  echo "Untarring Ambari"
+  tar -C ${HDP_REPO_BASEPATH} -xzf /root/hadoop-sw/ambari-1.7.0-centos6.tar.gz
 fi
 
 echo "Setting up Ambari and HDP repository files"
-# expecting these in the schared project dir on the host
+# expecting these in the shared project dir on the host
 cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/yum.repos.d/
 
 # BUILD_AMBARI=1
