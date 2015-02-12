@@ -132,7 +132,7 @@ then
   ambari-server start
 
   echo "Installing Ambari shell"
-  curl -Ls https://raw.githubusercontent.com/sequenceiq/ambari-shell/master/latest-snap.sh | bash
+  curl -Ls https://raw.githubusercontent.com/sequenceiq/ambari-shell/master/latest-snap.sh | bash >&/dev/null
   # this leaves the ambari shell to be invoked as java -jar /tmp/ambari-shell.jar
 
   echo "Waiting for Ambari server to answer on port 8080"
