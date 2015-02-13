@@ -92,7 +92,7 @@ yum -y install java-1.7.0-openjdk java-1.7.0-openjdk-devel
 
 echo "Setting up repository mirrors"
 export HDP_REPO_BASEPATH=/vagrant/hdp-repo
-export HDP_REPO_PATH=${HDP_REPO_PATH}/hdp
+export HDP_REPO_PATH=${HDP_REPO_BASEPATH}/hdp
 mkdir -p ${HDP_REPO_PATH}
 if [ ! -d "${HDP_REPO_PATH}/HDP" ] ; then
   echo "Untarring HDP"
