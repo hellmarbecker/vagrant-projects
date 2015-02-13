@@ -96,15 +96,21 @@ export HDP_REPO_PATH=${HDP_REPO_BASEPATH}/hdp
 mkdir -p ${HDP_REPO_PATH}
 if [ ! -d "${HDP_REPO_PATH}/HDP" ] ; then
   echo "Untarring HDP"
-  tar -C ${HDP_REPO_PATH} -xzf /root/hadoop-sw/HDP-2.2.0.0-centos6-rpm.tar.gz/
+  tar -C ${HDP_REPO_PATH} -xzf /root/hadoop-sw/HDP-2.2.0.0-centos6-rpm.tar.gz
+else
+  echo "HDP already present"
 fi
 if [ ! -d "${HDP_REPO_PATH}/HDP-UTILS-1.1.0.20" ] ; then
   echo "Untarring HDP-UTILS"
   tar -C ${HDP_REPO_PATH} -xzf /root/hadoop-sw/HDP-UTILS-1.1.0.20-centos6.tar.gz
+else
+  echo "HDP-UTILS already present"
 fi
 if [ ! -d "${HDP_REPO_BASEPATH}/ambari" ] ; then
   echo "Untarring Ambari"
   tar -C ${HDP_REPO_BASEPATH} -xzf /root/hadoop-sw/ambari-1.7.0-centos6.tar.gz
+else
+  echo "Ambari already present"
 fi
 
 echo "Setting up Ambari and HDP repository files"
