@@ -117,6 +117,14 @@ echo "Setting up Ambari and HDP repository files"
 # expecting these in the shared project dir on the host
 cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/yum.repos.d/
 
+# Ambari cannot use file:// repositories, so give it a web server
+# echo "Installing Apache web server"
+# yum -y install httpd
+# chkconfig httpd on
+# ln -sf $HDP_REPO_BASEPATH/* /var/www/html/
+# service httpd start
+
+  echo "Setting up repository mirrors"
 # BUILD_AMBARI=1
 
 if [[ `hostname` =~ 'master' ]]
@@ -138,8 +146,8 @@ then
   echo "Starting Ambari server"
   ambari-server start
 
-  echo "Installing Ambari shell"
-  curl -Ls https://raw.githubusercontent.com/sequenceiq/ambari-shell/master/latest-snap.sh | bash >&/dev/null
+  # echo "Installing Ambari shell"
+  # curl -Ls https://raw.githubusercontent.com/sequenceiq/ambari-shell/master/latest-snap.sh | bash >&/dev/null
   # this leaves the ambari shell to be invoked as java -jar /tmp/ambari-shell.jar
 
   echo "Waiting for Ambari server to answer on port 8080"
@@ -180,6 +188,8 @@ fi
 # agents to be installed on all nodes
 echo "Installing Ambari agent"
 yum -y install /vagrant/ambari-rpm/ambari-agent-*.rpm
+echo "Configuring Ambari agent"
+sed -i "s/localhost/master-1/" /etc/ambari-agent/conf/ambari-agent.ini
 echo "Starting Ambari agent"
 ambari-agent start
 
