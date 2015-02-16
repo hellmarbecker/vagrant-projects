@@ -124,7 +124,7 @@ cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/y
 # ln -sf $HDP_REPO_BASEPATH/* /var/www/html/
 # service httpd start
 
-  echo "Setting up repository mirrors"
+echo "Setting up repository mirrors"
 # BUILD_AMBARI=1
 
 if [[ `hostname` =~ 'master' ]]
@@ -132,9 +132,9 @@ then
 
   echo "Installing Ambari server"
   # for standard released version:
-  # yum -y install ambari-server
+  yum -y install ambari-server
   # bleeding edge version:
-  yum -y install /vagrant/ambari-rpm/ambari-server-*.noarch.rpm
+  # yum -y install /vagrant/ambari-rpm/ambari-server-*.noarch.rpm
   echo "Setting up Ambari server"
   # use the previously downloaded JDK so we don't need to download again
   ambari-server setup -s -j /usr/lib/jvm/jre-1.7.0-openjdk.x86_64
@@ -156,7 +156,7 @@ then
     curl "http://master-1:8080" >&/dev/null && break
   done
 
-  # PUSH_AGENTS=1
+  PUSH_AGENTS=1
   if [ -n "$PUSH_AGENTS" ]
   then
     echo "Distributing Ambari agents"
@@ -173,9 +173,7 @@ then
         \"sshKey\":\"$jkey\",
         \"hosts\":[
           \"master-1\",
-          \"slave-1\",
-          \"slave-2\",
-          \"slave-3\"
+          \"slave-1\"
         ],
         \"user\":\"root\"
       }" 'http://master-1:8080/api/v1/bootstrap'
@@ -186,12 +184,12 @@ then
 fi
 
 # agents to be installed on all nodes
-echo "Installing Ambari agent"
-yum -y install /vagrant/ambari-rpm/ambari-agent-*.rpm
-echo "Configuring Ambari agent"
-sed -i "s/localhost/master-1/" /etc/ambari-agent/conf/ambari-agent.ini
-echo "Starting Ambari agent"
-ambari-agent start
+# echo "Installing Ambari agent"
+# yum -y install /vagrant/ambari-rpm/ambari-agent-*.rpm
+# echo "Configuring Ambari agent"
+# sed -i "s/localhost/master-1/" /etc/ambari-agent/conf/ambari-agent.ini
+# echo "Starting Ambari agent"
+# ambari-agent start
 
 echo "Provisioner: done"
 

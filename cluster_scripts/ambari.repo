@@ -1,6 +1,6 @@
-[Updates-ambari-1.7.0]
-name=ambari-1.7.0 - Updates
-baseurl=file:///vagrant/hdp-repo/ambari/centos6/1.x/updates/1.7.0
+[AMBARI-2.0.0]
+name=Ambari 1.x
+baseurl=file:///vagrant/AMBARI-2.0.0
 gpgcheck=0
 enabled=1
 priority=1
