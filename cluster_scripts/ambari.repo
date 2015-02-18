@@ -1,7 +1,8 @@
 [AMBARI-2.0.0]
 name=Ambari 1.x
-baseurl=file:///vagrant/AMBARI-2.0.0
+baseurl=http://s3.amazonaws.com/dev.hortonworks.com/ambari/centos6/1.x/BUILDS/trunk-401
 gpgcheck=0
+gpgkey=http://s3.amazonaws.com/dev.hortonworks.com/ambari/centos6/RPM-GPG-KEY/RPM-GPG-KEY-Jenkins
 enabled=1
 priority=1
 

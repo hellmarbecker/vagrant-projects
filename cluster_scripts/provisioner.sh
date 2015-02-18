@@ -21,7 +21,7 @@ touch $tagfile
 if curl -s www.retail.intranet >/dev/null
 then
   echo "Detected ING network. Setting proxy for ING"
-  export http_proxy=http://m05h306:Ping2oo5@proxynldcv.europe.intranet:8080/
+  export http_proxy=http://m05h306:Kurtie13@proxynldcv.europe.intranet:8080/
   export https_proxy=${http_proxy}
 fi
 
@@ -33,15 +33,12 @@ chmod 0600 /root/.ssh/id_rsa.pub
 cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 chmod 0400 /root/.ssh/authorized_keys
 
-echo "Installing perl"
-yum -y install perl
-
 # Enter all the cluster hostnames to the hosts file. Make sure own hostname
 # resolves to the external IP (not localhost).
 echo "Setting up hosts file"
-perl -pi -e 's/(127\.0\.0\.1\s+)\S+/$1/' /etc/hosts
+sed -ie 's/\(127\.0\.0\.1\)[[:space:]]*[^[:space:]]*[[:space:]]*/\1 /g' /etc/hosts
 echo "192.168.17.11 master-1 master-1.localdomain" >> /etc/hosts
-for i in `seq 1 .. $3`
+for i in `seq 1 $3`
 do
   echo "192.168.17.2$i slave-$i slave-$i.localdomain" >> /etc/hosts
 done
@@ -56,7 +53,7 @@ then
   chmod 600 /root/.ssh/id_rsa
   echo "Setting up host key cache"
   ssh -oStrictHostKeyChecking=no master-1 "echo Logging in to master-1 for host key"
-  for i in `seq 1 .. $3`
+  for i in `seq 1 $3`
   do
     ssh -oStrictHostKeyChecking=no slave-$i "echo Logging in to slave-$i for host key"
   done
@@ -127,12 +124,15 @@ cp /vagrant/cluster_scripts/ambari.repo /vagrant/cluster_scripts/hdp.repo /etc/y
 echo "Setting up repository mirrors"
 # BUILD_AMBARI=1
 
+# This environment variable governs whether the Ambari agents are installed by Ambari or by this script.
+# PUSH_AGENTS=1
+
 if [[ `hostname` =~ 'master' ]]
 then
 
   echo "Installing Ambari server"
   # for standard released version:
-  yum -y install ambari-server
+  yum -y -v install ambari-server
   # bleeding edge version:
   # yum -y install /vagrant/ambari-rpm/ambari-server-*.noarch.rpm
   echo "Setting up Ambari server"
@@ -156,7 +156,6 @@ then
     curl "http://master-1:8080" >&/dev/null && break
   done
 
-  PUSH_AGENTS=1
   if [ -n "$PUSH_AGENTS" ]
   then
     echo "Distributing Ambari agents"
@@ -183,13 +182,16 @@ then
   fi
 fi
 
-# agents to be installed on all nodes
-# echo "Installing Ambari agent"
-# yum -y install /vagrant/ambari-rpm/ambari-agent-*.rpm
-# echo "Configuring Ambari agent"
-# sed -i "s/localhost/master-1/" /etc/ambari-agent/conf/ambari-agent.ini
-# echo "Starting Ambari agent"
-# ambari-agent start
+if [ -z "$PUSH_AGENTS" ] ; then
+  # agents to be installed on all nodes
+  echo "Installing Ambari agent"
+  # yum -y install /vagrant/ambari-rpm/ambari-agent-*.rpm
+  yum -y -v install ambari-agent
+  echo "Configuring Ambari agent"
+  sed -i "s/localhost/master-1/" /etc/ambari-agent/conf/ambari-agent.ini
+  echo "Starting Ambari agent"
+  ambari-agent start
+fi
 
 echo "Provisioner: done"
 
