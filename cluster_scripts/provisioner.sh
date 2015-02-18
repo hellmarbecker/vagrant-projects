@@ -10,16 +10,14 @@
 # If the provisioner ran already, do nothing.
 tagfile=/root/.provisioned
 
-if [ -f $tagfile ]
-then
+if [ -f $tagfile ] ; then
   echo "$tagfile already present, exiting"
   exit
 fi
 touch $tagfile
 
 # Try to find out if we are running inside ING, if so set proxy
-if curl -s www.retail.intranet >/dev/null
-then
+if curl -s www.retail.intranet >/dev/null ; then
   echo "Detected ING network. Setting proxy for ING"
   export http_proxy=http://m05h306:Kurtie13@proxynldcv.europe.intranet:8080/
   export https_proxy=${http_proxy}
@@ -46,8 +44,7 @@ done
 # If this is the master node, copy the root private key to ~/.ssh.
 # Also connect once to all nodes without host checking, in order to
 # automatically accept the host key for each node.
-if [[ `hostname` =~ 'master' ]]
-then
+if [[ `hostname` =~ 'master' ]] ; then
   echo 'Copying private root SSH Key to VM for provisioning...'
   echo "$2" > /root/.ssh/id_rsa
   chmod 600 /root/.ssh/id_rsa
@@ -66,8 +63,7 @@ ulimit -Hn 10240
 ulimit -Sn 10240
 
 echo "Creating gridXX directories"
-for i in 0 1 2
-do
+for i in 0 1 2 ; do
   mkdir -p /hadoop/grid$i
   chmod 777 /hadoop/grid$i
 done
@@ -127,8 +123,7 @@ echo "Setting up repository mirrors"
 # This environment variable governs whether the Ambari agents are installed by Ambari or by this script.
 # PUSH_AGENTS=1
 
-if [[ `hostname` =~ 'master' ]]
-then
+if [[ `hostname` =~ 'master' ]] ; then
 
   echo "Installing Ambari server"
   # for standard released version:
@@ -151,13 +146,11 @@ then
   # this leaves the ambari shell to be invoked as java -jar /tmp/ambari-shell.jar
 
   echo "Waiting for Ambari server to answer on port 8080"
-  while true
-  do
+  while true ; do
     curl "http://master-1:8080" >&/dev/null && break
   done
 
-  if [ -n "$PUSH_AGENTS" ]
-  then
+  if [ -n "$PUSH_AGENTS" ] ; then
     echo "Distributing Ambari agents"
     # Need to convert the newlines in private key to \n escape sequence for JSON transmission
     # jkey=`echo "$2" | perl -e 'my $a = join "", <>; $a =~ s/\n/\\\\n/g; print $a'`
@@ -191,6 +184,36 @@ if [ -z "$PUSH_AGENTS" ] ; then
   sed -i "s/localhost/master-1/" /etc/ambari-agent/conf/ambari-agent.ini
   echo "Starting Ambari agent"
   ambari-agent start
+fi
+
+# Install and configure basic Kerberos components
+
+# On CentOS, all the dependent files live in /var/kerberos/krb5kdc
+export KRB5_CONFIGDIR=/var/kerberos/krb5kdc
+export KRB5_KDC=master-1.localdomain
+export KRB5_REALM=LOCAL_REALM
+
+echo "Installing Kerberos 5 client"
+yum -y install krb5-workstation krb5-libs
+echo "Configuring Kerberos"
+sed -i -e "s/kerberos\\.example\\.com/${KRB5_KDC}/g" -e "s/EXAMPLE\\.COM/${KRB5_REALM}/g" /etc/krb5.conf
+
+if [[ `hostname` =~ 'master' ]] ; then
+  # Install KDC
+  echo "Installing Kerberos 5 server package"
+  yum -y install krb5-server
+  echo "Configuring Kerberos 5 services"
+  /usr/sbin/kdb5_util create -r ${KRB5_REALM} -s -P SECRET
+  sed -i -e "s/EXAMPLE\\.COM/${KRB5_REALM}/g" ${KRB5_CONFIGDIR}/kadm5.acl
+  kadmin.local -q "addprinc -pw admin admin/admin@${KRB5_REALM}"
+  kadmin.local -q "ktadd -k ${KRB5_CONFIGDIR}/kadm5.keytab kadmin/admin kadmin/changepw" 
+  echo "Starting Kerberos 5 KDC"
+  chkconfig krb5kdc on
+  service krb5kdc start
+  echo "Starting Kerberos 5 admin service"
+  chkconfig kadmin on
+  service kadmin start
+
 fi
 
 echo "Provisioner: done"
