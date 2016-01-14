@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
 
   # Configure VM Ram usage
   config.vm.provider "virtualbox" do |v|
-    v.memory = 3072
+    v.memory = 2560
     # Fix DNS, see http://askubuntu.com/questions/238040/how-do-i-fix-name-service-for-vagrant-client
     v.customize [ "modifyvm", :id, "--natdnshostresolver1", "on" ]
   end
