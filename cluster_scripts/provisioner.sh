@@ -19,7 +19,7 @@ touch $tagfile
 # Try to find out if we are running inside ING, if so set proxy
 if curl -s www.retail.intranet >/dev/null ; then
   echo "Detected ING network. Setting proxy for ING"
-  export http_proxy=http://m05h306:Kurtie13@proxynldcv.europe.intranet:8080/
+  export http_proxy=http://m05h306:********@proxynldcv.europe.intranet:8080/
   export https_proxy=${http_proxy}
 fi
 
